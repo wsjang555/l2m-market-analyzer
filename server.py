@@ -1,9 +1,11 @@
 import asyncio
 import time
 import sys
-from fastapi import FastAPI
+import base64
+import secrets
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 import os
 from dotenv import load_dotenv
 
@@ -16,6 +18,37 @@ from fast_armor_scanner import run_fast_armor_scanner as scan_a
 load_dotenv()
 
 app = FastAPI(title="L2M Dashboard API")
+
+# ── HTTP Basic Auth 미들웨어 ────────────────────────────────────
+# Render 환경변수 APP_USERNAME, APP_PASSWORD 로 설정
+# 미설정 시 기본값: admin / l2m1234
+@app.middleware("http")
+async def basic_auth_middleware(request: Request, call_next):
+    app_username = os.getenv("APP_USERNAME", "admin")
+    app_password = os.getenv("APP_PASSWORD", "l2m1234")
+
+    auth_header = request.headers.get("Authorization", "")
+    authorized = False
+
+    if auth_header.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+            username, password = decoded.split(":", 1)
+            ok_user = secrets.compare_digest(username, app_username)
+            ok_pass = secrets.compare_digest(password, app_password)
+            authorized = ok_user and ok_pass
+        except Exception:
+            pass
+
+    if not authorized:
+        return Response(
+            content="접근 권한이 없습니다. 아이디와 비밀번호를 입력하세요.",
+            status_code=401,
+            headers={"WWW-Authenticate": 'Basic realm="L2M Dashboard"'},
+        )
+
+    return await call_next(request)
+# ────────────────────────────────────────────────────────────────
 
 @app.get("/api/scan")
 async def perform_full_scan():
