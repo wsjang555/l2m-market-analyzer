@@ -1,11 +1,12 @@
 import asyncio
 import time
 import sys
-import base64
+import hmac
+import hashlib
 import secrets
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Form
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, Response, RedirectResponse, FileResponse
 import os
 from dotenv import load_dotenv
 
@@ -19,48 +20,75 @@ load_dotenv()
 
 app = FastAPI(title="L2M Dashboard API")
 
-# ── HTTP Basic Auth 미들웨어 ────────────────────────────────────
-# Render 환경변수 APP_USERNAME, APP_PASSWORD 로 설정
-# 미설정 시 기본값: admin / l2m1234
+# ── 쿠키 세션 토큰 생성/검증 ────────────────────────────────────
+def _make_token(username: str, password: str) -> str:
+    secret = os.getenv("SECRET_KEY", "l2m-default-secret-key-change-me")
+    msg = f"{username}:{password}"
+    return hmac.new(secret.encode(), msg.encode(), hashlib.sha256).hexdigest()
+
+def _verify_session(token: str) -> bool:
+    username = os.getenv("APP_USERNAME", "admin")
+    password = os.getenv("APP_PASSWORD", "l2m2024!")
+    expected = _make_token(username, password)
+    return secrets.compare_digest(token, expected)
+# ────────────────────────────────────────────────────────────────
+
+# ── 인증 미들웨어: 로그인 페이지/엔드포인트만 허용, 나머지는 쿠키 확인
+WHITELIST = {"/login", "/auth/login"}
+
 @app.middleware("http")
-async def basic_auth_middleware(request: Request, call_next):
-    app_username = os.getenv("APP_USERNAME", "admin")
-    app_password = os.getenv("APP_PASSWORD", "l2m1234")
+async def auth_middleware(request: Request, call_next):
+    if request.url.path in WHITELIST:
+        return await call_next(request)
 
-    auth_header = request.headers.get("Authorization", "")
-    authorized = False
+    session_token = request.cookies.get("l2m_session", "")
+    if _verify_session(session_token):
+        return await call_next(request)
 
-    if auth_header.startswith("Basic "):
-        try:
-            decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
-            username, password = decoded.split(":", 1)
-            ok_user = secrets.compare_digest(username, app_username)
-            ok_pass = secrets.compare_digest(password, app_password)
-            authorized = ok_user and ok_pass
-        except Exception:
-            pass
+    # 미인증 → 로그인 페이지로 리다이렉트
+    return RedirectResponse(url="/login", status_code=302)
+# ────────────────────────────────────────────────────────────────
 
-    if not authorized:
-        return Response(
-            content="접근 권한이 없습니다. 아이디와 비밀번호를 입력하세요.",
-            status_code=401,
-            headers={"WWW-Authenticate": 'Basic realm="L2M Dashboard"'},
+# ── 로그인 페이지 ────────────────────────────────────────────────
+@app.get("/login")
+async def login_page(error: int = 0):
+    return FileResponse("static/login.html")
+
+@app.post("/auth/login")
+async def do_login(
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    correct_username = os.getenv("APP_USERNAME", "admin")
+    correct_password = os.getenv("APP_PASSWORD", "l2m2024!")
+
+    ok_user = secrets.compare_digest(username, correct_username)
+    ok_pass = secrets.compare_digest(password, correct_password)
+
+    if ok_user and ok_pass:
+        token = _make_token(username, password)
+        response = RedirectResponse(url="/", status_code=302)
+        # 30일 유지 (httponly 쿠키 — JS에서 접근 불가)
+        response.set_cookie(
+            "l2m_session", token,
+            httponly=True, max_age=86400 * 30, samesite="lax"
         )
+        return response
 
-    return await call_next(request)
+    # 실패 → 로그인 페이지로 돌아감 (error 파라미터)
+    return RedirectResponse(url="/login?error=1", status_code=302)
+
+@app.get("/auth/logout")
+async def do_logout():
+    response = RedirectResponse(url="/login", status_code=302)
+    response.delete_cookie("l2m_session")
+    return response
 # ────────────────────────────────────────────────────────────────
 
 @app.get("/api/scan")
 async def perform_full_scan():
     start_time = time.time()
 
-    # ── 등급 정의 ──────────────────────────────────────────────
-    # grade=1 : 일반(하얀색)
-    # grade=2 : 고급(초록색)
-    # grade=3 : 희귀(파란색)
-    # ──────────────────────────────────────────────────────────
-
-    # 3개 등급 병렬 스캔
     results = await asyncio.gather(
         scan_w(1, 9999.0, 7),   # 하얀색 무기 +7강
         scan_w(2, 9999.0, 7),   # 초록색 무기 +7강
