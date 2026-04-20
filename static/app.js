@@ -95,24 +95,51 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ── 스캔 실행 ─────────────────────────────────────────────
+    let elapsedTimer = null;
+
+    const startElapsedTimer = () => {
+        const startAt = Date.now();
+        scanTimeEl.innerText = '스캔 진행 중... 0초';
+        elapsedTimer = setInterval(() => {
+            const sec = Math.floor((Date.now() - startAt) / 1000);
+            scanTimeEl.innerText = `스캔 진행 중... ${sec}초 (최대 90초)`;
+        }, 1000);
+    };
+
+    const stopElapsedTimer = () => {
+        if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+    };
+
     const performScan = async () => {
         btnScan.disabled  = true;
         btnScan.innerText = '스캔 중...';
         [dashBlue, dashGreen, dashWhite].forEach(d => d.innerHTML = '');
         loader.classList.remove('hidden');
-        scanTimeEl.innerText = '스캔 진행 중...';
+        startElapsedTimer();
+
+        // 90초 타임아웃 — Render 무료 서버 속도 대응
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => controller.abort(), 90_000);
 
         try {
-            const res  = await fetch('/api/scan');
+            const res  = await fetch('/api/scan', { signal: controller.signal });
+            clearTimeout(timeoutId);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            stopElapsedTimer();
             loader.classList.add('hidden');
             fillDashboard(data);
             const now = new Date();
             scanTimeEl.innerText = `최근 스캔: ${now.toLocaleTimeString('ko-KR')} (소요시간: ${data.time}초)`;
         } catch (err) {
+            clearTimeout(timeoutId);
+            stopElapsedTimer();
             loader.classList.add('hidden');
-            alert('스캔 중 오류가 발생했습니다. 서버 연결 확인하세요.');
+            if (err.name === 'AbortError') {
+                alert('⏱ 스캔 시간이 너무 오래 걸립니다.\n서버가 잠들었을 수 있습니다. 30초 후 다시 시도해 주세요.');
+            } else {
+                alert(`스캔 오류: ${err.message}\n\n잠시 후 다시 시도해 주세요.`);
+            }
             console.error(err);
         } finally {
             btnScan.disabled  = false;
