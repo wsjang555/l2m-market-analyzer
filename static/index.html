@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L2M 거래소 꿀매물 대시보드</title>
+    <meta name="description" content="리니지2M 실시간 강화 차익 분석 대시보드 - 등급별 꿀매물 Top5">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="container glass-panel">
+        <header>
+            <div class="title-area">
+                <h1>💎 L2M <span class="title-accent">Market Scanner</span></h1>
+                <p>실시간 강화 차익이 가장 큰 꿀매물 Top 5</p>
+            </div>
+            <div class="action-area">
+                <button id="btn-refresh-cache" class="btn btn-secondary">DB 강제초기화</button>
+                <button id="btn-scan" class="btn btn-primary">스캔 시작 🚀</button>
+            </div>
+        </header>
+
+        <!-- 등급 탭 -->
+        <div class="tab-bar">
+            <button class="tab active" data-grade="blue">🔵 파란색 (희귀)</button>
+            <button class="tab" data-grade="green">🟢 초록색 (고급)</button>
+            <button class="tab" data-grade="white">⚪ 하얀색 (일반)</button>
+        </div>
+
+        <div id="loader" class="loader-container hidden">
+            <div class="spinner"></div>
+            <p id="loader-text">아이템 가격 스캔 중... (최초 실행 시 DB 구축으로 수십 초 소요)</p>
+        </div>
+
+        <!-- 탭별 대시보드 -->
+        <div id="dash-blue"  class="dashboard-tab active"></div>
+        <div id="dash-green" class="dashboard-tab hidden"></div>
+        <div id="dash-white" class="dashboard-tab hidden"></div>
+
+        <footer>
+            <div class="status-bar">
+                <span id="scan-time">기록 없음</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js?v=2"></script>
+</body>
+</html>

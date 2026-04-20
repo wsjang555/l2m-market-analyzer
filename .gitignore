@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables (secrets!)
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+output.txt
+
+# Cache files (item DB is re-generated at runtime)
+item_db_*.json
+final_report.json
+
+# Archives
+*.zip
+
+# Unrelated projects
+sample-app/
+yt_agent/
