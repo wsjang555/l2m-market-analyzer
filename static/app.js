@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ── 섹션 카드 렌더 ────────────────────────────────────────
+    // ── 섹션 카드 렌더 (차익 분석용) ──────────────────────────
     const renderSection = (title, items, enchantLevel, theme, delayIdx) => {
         const sec = document.createElement('div');
         sec.className = `scan-section ${theme}-theme`;
@@ -37,8 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pX   = item[`p${enchantLevel}`] !== undefined ? item[`p${enchantLevel}`] : '-';
                 const diff = item.diff !== undefined ? item.diff : '-';
                 rowsHtml += `
-                <div class="item-row ${idx===0?'item-top':''}">
-                    <div class="item-rank">${RANK_MEDALS[idx]||`${idx+1}위`}</div>
+                <div class="item-row ${idx===0?'item-top':''}">\n                    <div class="item-rank">${RANK_MEDALS[idx]||`${idx+1}위`}</div>
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div class="item-prices">
@@ -64,18 +63,66 @@ document.addEventListener('DOMContentLoaded', () => {
         return sec;
     };
 
+    // ── 섹션 카드 렌더 (최저가용) ─────────────────────────────
+    const CHEAP_MEDALS = ['🥇','🥈','🥉','4위','5위'];
+    const renderCheapSection = (title, items, theme, delayIdx) => {
+        const sec = document.createElement('div');
+        sec.className = `scan-section ${theme}-theme`;
+        sec.style.animationDelay = `${delayIdx * 0.1}s`;
+
+        let rowsHtml = '';
+        if (!items || items.length === 0) {
+            rowsHtml = `<div class="no-data">해당 등급 거래소 등록 매물 없음</div>`;
+        } else {
+            items.forEach((item, idx) => {
+                const p0 = item.p0 !== undefined ? item.p0 : '-';
+                rowsHtml += `
+                <div class="item-row cheap-row ${idx===0?'item-top':''}">\n                    <div class="item-rank">${CHEAP_MEDALS[idx]||`${idx+1}위`}</div>
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-prices">
+                            <span class="price-tag p0-tag">0강 <strong>${p0}</strong> 💎</span>
+                            <span class="cheap-badge">최저가</span>
+                        </div>
+                    </div>
+                    <div class="item-diff cheap-price">
+                        <span class="diff-label">가격</span>
+                        <span class="diff-value gold-value">${p0} 💎</span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        sec.innerHTML = `
+            <div class="section-header">
+                <span class="section-dot cheap-dot"></span>
+                <span class="section-title">${title}</span>
+            </div>
+            <div class="section-body">${rowsHtml}</div>`;
+        return sec;
+    };
+
+
     // ── 대시보드 채우기 ───────────────────────────────────────
     const fillDashboard = (data) => {
         const wLv = data.weapon_level ?? 7;
         const aLv = data.armor_level  ?? 5;
 
-        // 파란색
+        // 파란색 탭 (차익 Top5 + 0강 최저가 섹션)
         dashBlue.innerHTML = '';
         const blueRow = document.createElement('div');
         blueRow.className = 'section-row';
         blueRow.appendChild(renderSection(`파란색 무기 +${wLv}강 차익 Top5`,  data.blue_weapons,  wLv, 'blue',  0));
         blueRow.appendChild(renderSection(`파란색 방어구 +${aLv}강 차익 Top5`, data.blue_armors,   aLv, 'blue',  1));
         dashBlue.appendChild(blueRow);
+
+        // 파란색 탭 — 0강 최저가 섹션
+        const cheapRow = document.createElement('div');
+        cheapRow.className = 'section-row cheap-row-block';
+        cheapRow.appendChild(renderCheapSection('🔵 파란색 무기 0강 최저가 Top2',    data.blue_cheap_weapons,  'blue', 2));
+        cheapRow.appendChild(renderCheapSection('🔵 파란색 방어구 0강 최저가 Top2',  data.blue_cheap_armors,   'blue', 3));
+        cheapRow.appendChild(renderCheapSection('💍 파란색 장신구 0강 최저가 Top3',  data.blue_accessories,    'blue', 4));
+        dashBlue.appendChild(cheapRow);
 
         // 초록색
         dashGreen.innerHTML = '';
@@ -93,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         whiteRow.appendChild(renderSection(`하얀색 방어구 +${aLv}강 차익 Top5`, data.white_armors,  aLv, 'white', 1));
         dashWhite.appendChild(whiteRow);
     };
+
 
     // ── 스캔 실행 ─────────────────────────────────────────────
     let elapsedTimer = null;

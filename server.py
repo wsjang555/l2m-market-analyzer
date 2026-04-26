@@ -13,8 +13,9 @@ from dotenv import load_dotenv
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-from fast_l2m_scanner import run_fast_scanner as scan_w
-from fast_armor_scanner import run_fast_armor_scanner as scan_a
+from fast_l2m_scanner import run_fast_scanner as scan_w, run_cheap_scanner as scan_w_cheap
+from fast_armor_scanner import run_fast_armor_scanner as scan_a, run_cheap_armor_scanner as scan_a_cheap
+from fast_accessory_scanner import run_accessory_scanner as scan_acc
 
 load_dotenv()
 
@@ -90,12 +91,15 @@ async def perform_full_scan():
     start_time = time.time()
 
     results = await asyncio.gather(
-        scan_w(1, 9999.0, 7),   # 하얀색 무기 +7강
-        scan_w(2, 9999.0, 7),   # 초록색 무기 +7강
-        scan_w(3, 9999.0, 7),   # 파란색 무기 +7강
-        scan_a(1, 9999.0, 5),   # 하얀색 방어구 +5강
-        scan_a(2, 9999.0, 5),   # 초록색 방어구 +5강
-        scan_a(3, 9999.0, 5),   # 파란색 방어구 +5강
+        scan_w(1, 9999.0, 7),      # 하얀색 무기 +7강 차익
+        scan_w(2, 9999.0, 7),      # 초록색 무기 +7강 차익
+        scan_w(3, 9999.0, 7),      # 파란색 무기 +7강 차익
+        scan_a(1, 9999.0, 5),      # 하얀색 방어구 +5강 차익
+        scan_a(2, 9999.0, 5),      # 초록색 방어구 +5강 차익
+        scan_a(3, 9999.0, 5),      # 파란색 방어구 +5강 차익
+        scan_w_cheap(3, top_n=2),  # 파란색 무기 0강 최저가 Top2
+        scan_a_cheap(3, top_n=2),  # 파란색 방어구 0강 최저가 Top2
+        scan_acc(3, top_n=3),      # 파란색 장신구 0강 최저가 Top3
         return_exceptions=True
     )
 
@@ -108,12 +112,15 @@ async def perform_full_scan():
         "time": total_time,
         "weapon_level": 7,
         "armor_level": 5,
-        "white_weapons":  safe(results[0]),
-        "green_weapons":  safe(results[1]),
-        "blue_weapons":   safe(results[2]),
-        "white_armors":   safe(results[3]),
-        "green_armors":   safe(results[4]),
-        "blue_armors":    safe(results[5]),
+        "white_weapons":       safe(results[0]),
+        "green_weapons":       safe(results[1]),
+        "blue_weapons":        safe(results[2]),
+        "white_armors":        safe(results[3]),
+        "green_armors":        safe(results[4]),
+        "blue_armors":         safe(results[5]),
+        "blue_cheap_weapons":  safe(results[6]),
+        "blue_cheap_armors":   safe(results[7]),
+        "blue_accessories":    safe(results[8]),
     })
 
 
@@ -121,10 +128,11 @@ async def perform_full_scan():
 async def reset_cache():
     deleted_files = []
     for f in os.listdir("."):
-        if f.startswith("item_db_") and f.endswith(".json"):
+        if (f.startswith("item_db_") and f.endswith(".json")):
             os.remove(f)
             deleted_files.append(f)
     return {"message": "Cache cleared.", "files": deleted_files}
+
 
 
 # 정적 파일은 마지막에 마운트

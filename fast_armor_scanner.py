@@ -181,5 +181,46 @@ async def run_fast_armor_scanner(target_grade, p0_target_price, pX_level, server
 
     return final_results[:5]
 
+
+async def run_cheap_armor_scanner(target_grade, top_n=2, server_id=1211):
+    """
+    해당 등급 방어구 중 0강 가격이 가장 저렴한 top_n개를 반환.
+    """
+    print(f"\n[방어구 최저가 스캔너] 등급:{target_grade}, 0강 최저가 Top{top_n}")
+    start_time = time.time()
+
+    unique_items = {}
+    db_filename = ITEM_DB_FILE.format(target_grade)
+
+    if os.path.exists(db_filename):
+        with open(db_filename, 'r', encoding='utf-8') as f:
+            unique_items = json.load(f)
+        print(f"1) 로컬 DB 로드 완료: {len(unique_items)}개 방어구 (캐시 사용)")
+    else:
+        unique_items = await fetch_all_items(target_grade)
+
+    if not unique_items:
+        return []
+
+    print(f"2) {len(unique_items)}개 방어구의 0강 실시간 가격 전수 스캔 중...")
+    conn = aiohttp.TCPConnector(limit=50)
+    async with aiohttp.ClientSession(connector=conn) as session:
+        tasks = [get_price(session, i_id, name, 0, server_id) for i_id, name in unique_items.items()]
+        results = await asyncio.gather(*tasks)
+
+    priced = [r for r in results if r["price"] is not None]
+    priced.sort(key=lambda x: x["price"])
+
+    final_results = [{"name": r["name"], "p0": r["price"]} for r in priced[:top_n]]
+
+    end_time = time.time()
+    print(f"\n[완료] 스캔 완료! ({end_time - start_time:.2f}초)")
+    print(f"\n[Top{top_n}] 방어구 0강 최저가:")
+    for r in final_results:
+        print(f"  - {r['name']} | 0강:{r['p0']} 다이아")
+
+    return final_results
+
+
 if __name__ == "__main__":
     asyncio.run(run_fast_armor_scanner(target_grade=2, p0_target_price=15.0, pX_level=5, server_id=1211))
