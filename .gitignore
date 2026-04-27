@@ -28,9 +28,11 @@ Thumbs.db
 *.log
 output.txt
 
-# Cache files (item DB is re-generated at runtime)
-item_db_*.json
+# final_report.json (임시 결과, git 불필요)
 final_report.json
+# 테스트 결과 파일
+*_result.txt
+grade_test.py
 
 # Archives
 *.zip

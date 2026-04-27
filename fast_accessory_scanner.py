@@ -16,65 +16,42 @@ SEARCH_URL = "https://dev-api.plaync.com/l2m/v1.0/market/items/search"
 PRICE_URL  = "https://dev-api.plaync.com/l2m/v1.0/market/items/{}/price"
 
 # ============================================================
-# 리니지2M 전체 장신구 이름 목록 (목걸이, 귀걸이, 반지)
+# 키워드 기반 장신구 자동 탐색 (이름 하드코딩 불필요)
+# API에서 grade == target_grade 인 item만 수집
 # ============================================================
-ALL_ACCESSORY_NAMES = [
-    # 목걸이
-    "코어 네클리스", "포가튼 네클리스", "이글 아이 네클리스", "쿼드 워크래프트 네클리스",
-    "트리플 워크래프트 네클리스", "트리플 듀얼 네클리스", "쿼드 소울 로스트 네클리스",
-    "쿼드 파이터즈 네클리스", "트리플 파이터즈 네클리스", "엘더 네클리스",
-    "골드 네클리스", "믿음의 네클리스", "수호의 네클리스", "치유의 네클리스",
-    "용기의 네클리스", "강철의 네클리스", "지혜의 네클리스", "행운의 목걸이",
-    "은 목걸이", "청동 목걸이", "구리 목걸이", "철 목걸이",
-    "마나의 목걸이", "생명의 목걸이", "힘의 목걸이",
-    # 귀걸이
-    "코어 이어링", "포가튼 이어링", "이글 아이 이어링", "쿼드 워크래프트 이어링",
-    "트리플 워크래프트 이어링", "트리플 듀얼 이어링", "쿼드 파이터즈 이어링",
-    "트리플 파이터즈 이어링", "엘더 이어링", "골드 이어링",
-    "믿음의 귀걸이", "수호의 귀걸이", "치유의 귀걸이", "용기의 귀걸이",
-    "강철의 귀걸이", "지혜의 귀걸이", "행운의 귀걸이", "은 귀걸이",
-    "청동 귀걸이", "구리 귀걸이", "철 귀걸이",
-    "마나의 귀걸이", "생명의 귀걸이", "힘의 귀걸이",
-    # 반지
-    "코어 링", "포가튼 링", "이글 아이 링", "쿼드 워크래프트 링",
-    "트리플 워크래프트 링", "트리플 듀얼 링", "쿼드 파이터즈 링",
-    "트리플 파이터즈 링", "엘더 링", "골드 링",
-    "믿음의 반지", "수호의 반지", "치유의 반지", "용기의 반지",
-    "강철의 반지", "지혜의 반지", "행운의 반지", "은 반지",
-    "청동 반지", "구리 반지", "철 반지",
-    "마나의 반지", "생명의 반지", "힘의 반지",
+ACCESSORY_KEYWORDS = [
+    "이어링", "귀걸이", "네클리스", "네크리스", "목걸이",
+    "반지", "링", "팔찌", "브레이슬릿", "아뮬렛",
+    "오브", "클러치", "브로치",
 ]
 
 ITEM_DB_FILE = "item_db_accessories_{}.json"  # 등급별 캐싱
 
 
-async def fetch_item_by_name(session, name, target_grade):
-    """정확한 아이템 이름으로 단건 검색"""
-    query = {"search_keyword": name, "sale": "true", "size": 10}
-    try:
-        async with session.get(SEARCH_URL, headers=headers, params=query, timeout=15) as res:
-            if res.status == 200:
-                data = await res.json()
-                for item in data.get('contents', []):
-                    if item.get('item_name') == name and item.get('grade') == target_grade:
-                        return (item.get('item_id'), name)
-    except Exception as e:
-        print(f"  검색 오류 ({name}): {e}")
-    return None
-
-
 async def fetch_all_items(target_grade):
-    print(f"1) 장신구(등급:{target_grade}) 전체 목록 DB 구축 중... ({len(ALL_ACCESSORY_NAMES)}종 직접 검색)")
+    """
+    키워드 탐색 방식으로 거래소에 등록된 grade==target_grade 장신구를 자동 수집.
+    이름 하드코딩 없이 API 응답에서 직접 grade 필터링.
+    """
+    print(f"1) 장신구(등급:{target_grade}) DB 구축 중... (키워드 자동 탐색: {len(ACCESSORY_KEYWORDS)}개 키워드)")
     unique_items = {}
     async with aiohttp.ClientSession() as session:
-        for name in ALL_ACCESSORY_NAMES:
-            result = await fetch_item_by_name(session, name, target_grade)
-            if result:
-                i_id, i_name = result
-                if i_id not in unique_items:
-                    unique_items[i_id] = i_name
-                    print(f"  ✓ [{target_grade}등급] {i_name} (ID:{i_id})")
-            await asyncio.sleep(0.05)
+        for keyword in ACCESSORY_KEYWORDS:
+            query = {"search_keyword": keyword, "sale": "true", "size": 50}
+            try:
+                async with session.get(SEARCH_URL, headers=headers, params=query, timeout=15) as res:
+                    if res.status == 200:
+                        data = await res.json()
+                        for item in data.get('contents', []):
+                            if item.get('grade') == target_grade:
+                                i_id = str(item.get('item_id'))
+                                i_name = item.get('item_name')
+                                if i_id not in unique_items:
+                                    unique_items[i_id] = i_name
+                                    print(f"  ✓ [{target_grade}등급] {i_name} (ID:{i_id})")
+            except Exception as e:
+                print(f"  탐색 오류 ({keyword}): {e}")
+            await asyncio.sleep(0.15)
 
     db_filename = ITEM_DB_FILE.format(target_grade)
     with open(db_filename, 'w', encoding='utf-8') as f:
