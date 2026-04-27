@@ -179,6 +179,8 @@ async def run_fast_scanner(target_grade, p0_target_price, pX_level, server_id=12
     for r in final_results[:5]:
         print(f"  - {r['name']} | 0강:{r['p0']} -> +{pX_level}강:{r[f'p{pX_level}']} | 차이:{r['diff']} 다이아")
 
+    return final_results[:5]
+
 async def run_cheap_scanner(target_grade, top_n=2, server_id=1211):
     """
     해당 등급 무기 중 0강 가격이 가장 저렴한 top_n개를 반환.
