@@ -63,9 +63,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return sec;
     };
 
-    // ── 섹션 카드 렌더 (최저가용) ─────────────────────────────
+    // ── 섹션 카드 렌더 (최저가/최고가 공용) ─────────────────────────
     const CHEAP_MEDALS = ['🥇','🥈','🥉','4위','5위'];
-    const renderCheapSection = (title, items, theme, delayIdx) => {
+    const renderCheapSection = (title, items, theme, delayIdx, badge = '최저가', badgeClass = 'cheap-badge') => {
         const sec = document.createElement('div');
         sec.className = `scan-section ${theme}-theme`;
         sec.style.animationDelay = `${delayIdx * 0.1}s`;
@@ -77,12 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
             items.forEach((item, idx) => {
                 const p0 = item.p0 !== undefined ? item.p0 : '-';
                 rowsHtml += `
-                <div class="item-row cheap-row ${idx===0?'item-top':''}">\n                    <div class="item-rank">${CHEAP_MEDALS[idx]||`${idx+1}위`}</div>
+                <div class="item-row cheap-row ${idx===0?'item-top':''}">
+                    <div class="item-rank">${CHEAP_MEDALS[idx]||`${idx+1}위`}</div>
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div class="item-prices">
                             <span class="price-tag p0-tag">0강 <strong>${p0}</strong> 💎</span>
-                            <span class="cheap-badge">최저가</span>
+                            <span class="${badgeClass}">${badge}</span>
                         </div>
                     </div>
                     <div class="item-diff cheap-price">
@@ -132,6 +133,12 @@ document.addEventListener('DOMContentLoaded', () => {
         greenRow.appendChild(renderSection(`초록색 방어구 +${aLv}강 차익 Top5`, data.green_armors,  aLv, 'green', 1));
         dashGreen.appendChild(greenRow);
 
+        // 초록색 탭 — 0강 최고가 섹션
+        const greenExpRow = document.createElement('div');
+        greenExpRow.className = 'section-row cheap-row-block col-full';
+        greenExpRow.appendChild(renderCheapSection('🟢 녹템(고급) 무기 0강 💎최고가 Top3', data.green_exp_weapons, 'green', 2, '최고가', 'exp-badge'));
+        dashGreen.appendChild(greenExpRow);
+
         // 하얀색
         dashWhite.innerHTML = '';
         const whiteRow = document.createElement('div');
@@ -139,7 +146,14 @@ document.addEventListener('DOMContentLoaded', () => {
         whiteRow.appendChild(renderSection(`하얀색 무기 +${wLv}강 차익 Top5`,  data.white_weapons, wLv, 'white', 0));
         whiteRow.appendChild(renderSection(`하얀색 방어구 +${aLv}강 차익 Top5`, data.white_armors,  aLv, 'white', 1));
         dashWhite.appendChild(whiteRow);
+
+        // 하얀색 탭 — 0강 최고가 섹션
+        const whiteExpRow = document.createElement('div');
+        whiteExpRow.className = 'section-row cheap-row-block col-full';
+        whiteExpRow.appendChild(renderCheapSection('⚪ 하얀템(일반) 무기 0강 💎최고가 Top3', data.white_exp_weapons, 'white', 2, '최고가', 'exp-badge'));
+        dashWhite.appendChild(whiteExpRow);
     };
+
 
 
     // ── 스캔 실행 ─────────────────────────────────────────────
