@@ -1,4 +1,4 @@
-/* app.js v2 */
+/* app.js v3 — 요청 목록 전용 */
 document.addEventListener('DOMContentLoaded', () => {
     const btnScan   = document.getElementById('btn-scan');
     const btnReset  = document.getElementById('btn-refresh-cache');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashGreen = document.getElementById('dash-green');
     const dashWhite = document.getElementById('dash-white');
 
-    const RANK_MEDALS = ['🥇','🥈','🥉','4위','5위'];
+    const RANK_MEDALS = ['🥇','🥈','🥉'];
 
     // ── 탭 전환 ──────────────────────────────────────────────
     document.querySelectorAll('.tab').forEach(tab => {
@@ -22,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ── 섹션 카드 렌더 (차익 분석용) ──────────────────────────
+    // ── 차익 섹션 렌더 ────────────────────────────────────────
     const renderSection = (title, items, enchantLevel, theme, delayIdx) => {
         const sec = document.createElement('div');
         sec.className = `scan-section ${theme}-theme`;
-        sec.style.animationDelay = `${delayIdx * 0.1}s`;
+        sec.style.animationDelay = `${delayIdx * 0.08}s`;
 
         let rowsHtml = '';
         if (!items || items.length === 0) {
@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const pX   = item[`p${enchantLevel}`] !== undefined ? item[`p${enchantLevel}`] : '-';
                 const diff = item.diff !== undefined ? item.diff : '-';
                 rowsHtml += `
-                <div class="item-row ${idx===0?'item-top':''}">\n                    <div class="item-rank">${RANK_MEDALS[idx]||`${idx+1}위`}</div>
+                <div class="item-row ${idx===0?'item-top':''}">
+                    <div class="item-rank">${RANK_MEDALS[idx]||`${idx+1}위`}</div>
                     <div class="item-info">
                         <div class="item-name">${item.name}</div>
                         <div class="item-prices">
@@ -63,98 +64,75 @@ document.addEventListener('DOMContentLoaded', () => {
         return sec;
     };
 
-    // ── 섹션 카드 렌더 (최저가/최고가 공용) ─────────────────────────
-    const CHEAP_MEDALS = ['🥇','🥈','🥉','4위','5위'];
-    const renderCheapSection = (title, items, theme, delayIdx, badge = '최저가', badgeClass = 'cheap-badge') => {
-        const sec = document.createElement('div');
-        sec.className = `scan-section ${theme}-theme`;
-        sec.style.animationDelay = `${delayIdx * 0.1}s`;
+    // ── 한 등급 탭의 섹션 그룹 빌드 ─────────────────────────────
+    // weaponSections: [{key, level, label}, ...]
+    // armorSections:  [{key, level, label}, ...]
+    const buildTab = (container, theme, weaponSections, armorSections, data) => {
+        container.innerHTML = '';
+        let delayIdx = 0;
 
-        let rowsHtml = '';
-        if (!items || items.length === 0) {
-            rowsHtml = `<div class="no-data">해당 등급 거래소 등록 매물 없음</div>`;
-        } else {
-            items.forEach((item, idx) => {
-                const p0 = item.p0 !== undefined ? item.p0 : '-';
-                rowsHtml += `
-                <div class="item-row cheap-row ${idx===0?'item-top':''}">
-                    <div class="item-rank">${CHEAP_MEDALS[idx]||`${idx+1}위`}</div>
-                    <div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-prices">
-                            <span class="price-tag p0-tag">0강 <strong>${p0}</strong> 💎</span>
-                            <span class="${badgeClass}">${badge}</span>
-                        </div>
-                    </div>
-                    <div class="item-diff cheap-price">
-                        <span class="diff-label">가격</span>
-                        <span class="diff-value gold-value">${p0} 💎</span>
-                    </div>
-                </div>`;
-            });
+        // 무기 + 방어구를 짝지어 section-row로 배치
+        const maxLen = Math.max(weaponSections.length, armorSections.length);
+        for (let i = 0; i < maxLen; i++) {
+            const row = document.createElement('div');
+            row.className = 'section-row';
+
+            if (i < weaponSections.length) {
+                const ws = weaponSections[i];
+                row.appendChild(renderSection(ws.label, data[ws.key], ws.level, theme, delayIdx++));
+            }
+            if (i < armorSections.length) {
+                const as_ = armorSections[i];
+                row.appendChild(renderSection(as_.label, data[as_.key], as_.level, theme, delayIdx++));
+            }
+
+            container.appendChild(row);
         }
-
-        sec.innerHTML = `
-            <div class="section-header">
-                <span class="section-dot cheap-dot"></span>
-                <span class="section-title">${title}</span>
-            </div>
-            <div class="section-body">${rowsHtml}</div>`;
-        return sec;
     };
-
 
     // ── 대시보드 채우기 ───────────────────────────────────────
     const fillDashboard = (data) => {
-        const wLv = data.weapon_level ?? 7;
-        const aLv = data.armor_level  ?? 5;
 
-        // 파란색 탭 (차익 Top5 + 0강 최저가 섹션)
-        dashBlue.innerHTML = '';
-        const blueRow = document.createElement('div');
-        blueRow.className = 'section-row';
-        blueRow.appendChild(renderSection(`파란색 무기 +${wLv}강 차익 Top5`,  data.blue_weapons,  wLv, 'blue',  0));
-        blueRow.appendChild(renderSection(`파란색 방어구 +${aLv}강 차익 Top5`, data.blue_armors,   aLv, 'blue',  1));
-        dashBlue.appendChild(blueRow);
+        // ── 희귀(파란색): 무기+7, 방어구+5 ──────────────────────
+        buildTab(
+            dashBlue, 'blue',
+            [{ key: 'blue_weapons_7', level: 7, label: '🔵 희귀 무기 +7강 차익 Top3' }],
+            [{ key: 'blue_armors_5',  level: 5, label: '🔵 희귀 방어구 +5강 차익 Top3' }],
+            data
+        );
 
-        // 파란색 탭 — 0강 최저가 섹션
-        const cheapRow = document.createElement('div');
-        cheapRow.className = 'section-row cheap-row-block';
-        cheapRow.appendChild(renderCheapSection('🔵 파란색 무기 0강 최저가 Top2',    data.blue_cheap_weapons,  'blue', 2));
-        cheapRow.appendChild(renderCheapSection('🔵 파란색 방어구 0강 최저가 Top2',  data.blue_cheap_armors,   'blue', 3));
-        cheapRow.appendChild(renderCheapSection('💍 파란색 장신구 0강 최저가 Top3',  data.blue_accessories,    'blue', 4));
-        dashBlue.appendChild(cheapRow);
+        // ── 고급(초록색): 무기+7/8/9, 방어구+5/6/7 ───────────────
+        buildTab(
+            dashGreen, 'green',
+            [
+                { key: 'green_weapons_7', level: 7, label: '🟢 고급 무기 +7강 차익 Top3' },
+                { key: 'green_weapons_8', level: 8, label: '🟢 고급 무기 +8강 차익 Top3' },
+                { key: 'green_weapons_9', level: 9, label: '🟢 고급 무기 +9강 차익 Top3' },
+            ],
+            [
+                { key: 'green_armors_5', level: 5, label: '🟢 고급 방어구 +5강 차익 Top3' },
+                { key: 'green_armors_6', level: 6, label: '🟢 고급 방어구 +6강 차익 Top3' },
+                { key: 'green_armors_7', level: 7, label: '🟢 고급 방어구 +7강 차익 Top3' },
+            ],
+            data
+        );
 
-        // 초록색
-        dashGreen.innerHTML = '';
-        const greenRow = document.createElement('div');
-        greenRow.className = 'section-row';
-        greenRow.appendChild(renderSection(`초록색 무기 +${wLv}강 차익 Top5`,  data.green_weapons, wLv, 'green', 0));
-        greenRow.appendChild(renderSection(`초록색 방어구 +${aLv}강 차익 Top5`, data.green_armors,  aLv, 'green', 1));
-        dashGreen.appendChild(greenRow);
-
-        // 초록색 탭 — 0강 최고가 섹션
-        const greenExpRow = document.createElement('div');
-        greenExpRow.className = 'section-row cheap-row-block col-full';
-        greenExpRow.appendChild(renderCheapSection('🟢 녹템(고급) 무기 0강 💎최고가 Top3', data.green_exp_weapons, 'green', 2, '최고가', 'exp-badge'));
-        dashGreen.appendChild(greenExpRow);
-
-        // 하얀색
-        dashWhite.innerHTML = '';
-        const whiteRow = document.createElement('div');
-        whiteRow.className = 'section-row';
-        whiteRow.appendChild(renderSection(`하얀색 무기 +${wLv}강 차익 Top5`,  data.white_weapons, wLv, 'white', 0));
-        whiteRow.appendChild(renderSection(`하얀색 방어구 +${aLv}강 차익 Top5`, data.white_armors,  aLv, 'white', 1));
-        dashWhite.appendChild(whiteRow);
-
-        // 하얀색 탭 — 0강 최고가 섹션
-        const whiteExpRow = document.createElement('div');
-        whiteExpRow.className = 'section-row cheap-row-block col-full';
-        whiteExpRow.appendChild(renderCheapSection('⚪ 하얀템(일반) 무기 0강 💎최고가 Top3', data.white_exp_weapons, 'white', 2, '최고가', 'exp-badge'));
-        dashWhite.appendChild(whiteExpRow);
+        // ── 일반(하얀색): 무기+7/8/9, 방어구+5/6/7 ───────────────
+        buildTab(
+            dashWhite, 'white',
+            [
+                { key: 'white_weapons_7', level: 7, label: '⚪ 일반 무기 +7강 차익 Top3' },
+                { key: 'white_weapons_8', level: 8, label: '⚪ 일반 무기 +8강 차익 Top3' },
+                { key: 'white_weapons_9', level: 9, label: '⚪ 일반 무기 +9강 차익 Top3' },
+            ],
+            [
+                { key: 'white_armors_5', level: 5, label: '⚪ 일반 방어구 +5강 차익 Top3' },
+                { key: 'white_armors_6', level: 6, label: '⚪ 일반 방어구 +6강 차익 Top3' },
+                { key: 'white_armors_7', level: 7, label: '⚪ 일반 방어구 +7강 차익 Top3' },
+            ],
+            data
+        );
     };
-
-
 
     // ── 스캔 실행 ─────────────────────────────────────────────
     let elapsedTimer = null;
@@ -164,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scanTimeEl.innerText = '스캔 진행 중... 0초';
         elapsedTimer = setInterval(() => {
             const sec = Math.floor((Date.now() - startAt) / 1000);
-            scanTimeEl.innerText = `스캔 진행 중... ${sec}초 (최대 90초)`;
+            scanTimeEl.innerText = `스캔 진행 중... ${sec}초 (최대 120초)`;
         }, 1000);
     };
 
@@ -179,9 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loader.classList.remove('hidden');
         startElapsedTimer();
 
-        // 90초 타임아웃 — Render 무료 서버 속도 대응
         const controller = new AbortController();
-        const timeoutId  = setTimeout(() => controller.abort(), 90_000);
+        const timeoutId  = setTimeout(() => controller.abort(), 120_000);
 
         try {
             const res  = await fetch('/api/scan', { signal: controller.signal });

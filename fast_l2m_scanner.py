@@ -173,13 +173,13 @@ async def run_fast_scanner(target_grade, p0_target_price, pX_level, server_id=12
 
     end_time = time.time()
     print(f"\n[완료] 스캔 완료! ({end_time - start_time:.2f}초)")
-    print(f"\n[Top5] 무기 (0강<={p0_target_price}, +{pX_level}강 차이순):")
+    print(f"\n[Top3] 무기 (0강<={p0_target_price}, +{pX_level}강 차이순):")
     if not final_results:
         print("  조건을 만족하는 매물이 없습니다.")
-    for r in final_results[:5]:
+    for r in final_results[:3]:
         print(f"  - {r['name']} | 0강:{r['p0']} -> +{pX_level}강:{r[f'p{pX_level}']} | 차이:{r['diff']} 다이아")
 
-    return final_results[:5]
+    return final_results[:3]
 
 async def run_cheap_scanner(target_grade, top_n=2, server_id=1211):
     """

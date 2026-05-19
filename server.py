@@ -13,9 +13,8 @@ from dotenv import load_dotenv
 if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-from fast_l2m_scanner import run_fast_scanner as scan_w, run_cheap_scanner as scan_w_cheap, run_expensive_scanner as scan_w_exp
-from fast_armor_scanner import run_fast_armor_scanner as scan_a, run_cheap_armor_scanner as scan_a_cheap
-from fast_accessory_scanner import run_accessory_scanner as scan_acc
+from fast_l2m_scanner import run_fast_scanner as scan_w
+from fast_armor_scanner import run_fast_armor_scanner as scan_a
 
 load_dotenv()
 
@@ -91,40 +90,50 @@ async def perform_full_scan():
     start_time = time.time()
 
     results = await asyncio.gather(
-        scan_w(1, 9999.0, 7),       # 하얀색 무기 +7강 차익
-        scan_w(2, 9999.0, 7),       # 초록색 무기 +7강 차익
-        scan_w(3, 9999.0, 7),       # 파란색 무기 +7강 차익
-        scan_a(1, 9999.0, 5),       # 하얀색 방어구 +5강 차익
-        scan_a(2, 9999.0, 5),       # 초록색 방어구 +5강 차익
-        scan_a(3, 9999.0, 5),       # 파란색 방어구 +5강 차익
-        scan_w_cheap(3, top_n=2),   # 파란색 무기 0강 최저가 Top2
-        scan_a_cheap(3, top_n=2),   # 파란색 방어구 0강 최저가 Top2
-        scan_acc(3, top_n=3),       # 파란색 장신구 0강 최저가 Top3
-        scan_w_exp(1, top_n=3),     # 하얀색(일반) 무기 0강 최고가 Top3
-        scan_w_exp(2, top_n=3),     # 초록색(고급) 무기 0강 최고가 Top3
+        # ── 희귀(파란색) ───────────────────────────────────
+        scan_w(3, 9999.0, 7),       # 파랑 무기 0강↔7강 Top3
+        scan_a(3, 9999.0, 5),       # 파랑 방어구 0강↔5강 Top3
+        # ── 고급(초록색) ───────────────────────────────────
+        scan_w(2, 9999.0, 7),       # 초록 무기 0강↔7강 Top3
+        scan_w(2, 9999.0, 8),       # 초록 무기 0강↔8강 Top3
+        scan_w(2, 9999.0, 9),       # 초록 무기 0강↔9강 Top3
+        scan_a(2, 9999.0, 5),       # 초록 방어구 0강↔5강 Top3
+        scan_a(2, 9999.0, 6),       # 초록 방어구 0강↔6강 Top3
+        scan_a(2, 9999.0, 7),       # 초록 방어구 0강↔7강 Top3
+        # ── 일반(하얀색) ───────────────────────────────────
+        scan_w(1, 9999.0, 7),       # 하양 무기 0강↔7강 Top3
+        scan_w(1, 9999.0, 8),       # 하양 무기 0강↔8강 Top3
+        scan_w(1, 9999.0, 9),       # 하양 무기 0강↔9강 Top3
+        scan_a(1, 9999.0, 5),       # 하양 방어구 0강↔5강 Top3
+        scan_a(1, 9999.0, 6),       # 하양 방어구 0강↔6강 Top3
+        scan_a(1, 9999.0, 7),       # 하양 방어구 0강↔7강 Top3
         return_exceptions=True
     )
 
     def safe(r):
-        return r if isinstance(r, list) else []
+        return (r[:3] if isinstance(r, list) else [])
 
     total_time = round(time.time() - start_time, 2)
 
     return JSONResponse(content={
         "time": total_time,
-        "weapon_level": 7,
-        "armor_level": 5,
-        "white_weapons":         safe(results[0]),
-        "green_weapons":         safe(results[1]),
-        "blue_weapons":          safe(results[2]),
-        "white_armors":          safe(results[3]),
-        "green_armors":          safe(results[4]),
-        "blue_armors":           safe(results[5]),
-        "blue_cheap_weapons":    safe(results[6]),
-        "blue_cheap_armors":     safe(results[7]),
-        "blue_accessories":      safe(results[8]),
-        "white_exp_weapons":     safe(results[9]),   # 하얀색 0강 최고가 Top3
-        "green_exp_weapons":     safe(results[10]),  # 초록색 0강 최고가 Top3
+        # 희귀(파랑)
+        "blue_weapons_7":   safe(results[0]),
+        "blue_armors_5":    safe(results[1]),
+        # 고급(초록)
+        "green_weapons_7":  safe(results[2]),
+        "green_weapons_8":  safe(results[3]),
+        "green_weapons_9":  safe(results[4]),
+        "green_armors_5":   safe(results[5]),
+        "green_armors_6":   safe(results[6]),
+        "green_armors_7":   safe(results[7]),
+        # 일반(하양)
+        "white_weapons_7":  safe(results[8]),
+        "white_weapons_8":  safe(results[9]),
+        "white_weapons_9":  safe(results[10]),
+        "white_armors_5":   safe(results[11]),
+        "white_armors_6":   safe(results[12]),
+        "white_armors_7":   safe(results[13]),
     })
 
 
