@@ -15,6 +15,7 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
 
 from fast_l2m_scanner import run_fast_scanner as scan_w
 from fast_armor_scanner import run_fast_armor_scanner as scan_a
+from fast_sigil_scanner import run_sigil_scanner as scan_sigil
 
 load_dotenv()
 
@@ -93,6 +94,9 @@ async def perform_full_scan():
         # ── 희귀(파란색) ───────────────────────────────────
         scan_w(3, 9999.0, 7),       # 파랑 무기 0강↔7강 Top3
         scan_a(3, 9999.0, 5),       # 파랑 방어구 0강↔5강 Top3
+        scan_sigil(3, 1),           # 파랑 시길 0강↔1강 Top3
+        scan_sigil(3, 2),           # 파랑 시길 0강↔2강 Top3
+        scan_sigil(3, 3),           # 파랑 시길 0강↔3강 Top3
         # ── 고급(초록색) ───────────────────────────────────
         scan_w(2, 9999.0, 7),       # 초록 무기 0강↔7강 Top3
         scan_w(2, 9999.0, 8),       # 초록 무기 0강↔8강 Top3
@@ -100,6 +104,9 @@ async def perform_full_scan():
         scan_a(2, 9999.0, 5),       # 초록 방어구 0강↔5강 Top3
         scan_a(2, 9999.0, 6),       # 초록 방어구 0강↔6강 Top3
         scan_a(2, 9999.0, 7),       # 초록 방어구 0강↔7강 Top3
+        scan_sigil(2, 1),           # 초록 시길 0강↔1강 Top3
+        scan_sigil(2, 2),           # 초록 시길 0강↔2강 Top3
+        scan_sigil(2, 3),           # 초록 시길 0강↔3강 Top3
         # ── 일반(하얀색) ───────────────────────────────────
         scan_w(1, 9999.0, 7),       # 하양 무기 0강↔7강 Top3
         scan_w(1, 9999.0, 8),       # 하양 무기 0강↔8강 Top3
@@ -120,20 +127,26 @@ async def perform_full_scan():
         # 희귀(파랑)
         "blue_weapons_7":   safe(results[0]),
         "blue_armors_5":    safe(results[1]),
+        "blue_sigils_1":    safe(results[2]),
+        "blue_sigils_2":    safe(results[3]),
+        "blue_sigils_3":    safe(results[4]),
         # 고급(초록)
-        "green_weapons_7":  safe(results[2]),
-        "green_weapons_8":  safe(results[3]),
-        "green_weapons_9":  safe(results[4]),
-        "green_armors_5":   safe(results[5]),
-        "green_armors_6":   safe(results[6]),
-        "green_armors_7":   safe(results[7]),
+        "green_weapons_7":  safe(results[5]),
+        "green_weapons_8":  safe(results[6]),
+        "green_weapons_9":  safe(results[7]),
+        "green_armors_5":   safe(results[8]),
+        "green_armors_6":   safe(results[9]),
+        "green_armors_7":   safe(results[10]),
+        "green_sigils_1":   safe(results[11]),
+        "green_sigils_2":   safe(results[12]),
+        "green_sigils_3":   safe(results[13]),
         # 일반(하양)
-        "white_weapons_7":  safe(results[8]),
-        "white_weapons_8":  safe(results[9]),
-        "white_weapons_9":  safe(results[10]),
-        "white_armors_5":   safe(results[11]),
-        "white_armors_6":   safe(results[12]),
-        "white_armors_7":   safe(results[13]),
+        "white_weapons_7":  safe(results[14]),
+        "white_weapons_8":  safe(results[15]),
+        "white_weapons_9":  safe(results[16]),
+        "white_armors_5":   safe(results[17]),
+        "white_armors_6":   safe(results[18]),
+        "white_armors_7":   safe(results[19]),
     })
 
 

@@ -93,26 +93,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── 대시보드 채우기 ───────────────────────────────────────
     const fillDashboard = (data) => {
 
-        // ── 희귀(파란색): 무기+7, 방어구+5 ──────────────────────
+        // ── 희귀(파란색): 무기+7, 방어구+5, 시길+1/2/3 ────────────
         buildTab(
             dashBlue, 'blue',
-            [{ key: 'blue_weapons_7', level: 7, label: '🔵 희귀 무기 +7강 차익 Top3' }],
-            [{ key: 'blue_armors_5',  level: 5, label: '🔵 희귀 방어구 +5강 차익 Top3' }],
+            [
+                { key: 'blue_weapons_7', level: 7, label: '파란색 무기 +7강 차익 Top3' },
+                { key: 'blue_sigils_1',  level: 1, label: '파란색 시길 +1강 차익 Top3' },
+                { key: 'blue_sigils_2',  level: 2, label: '파란색 시길 +2강 차익 Top3' },
+                { key: 'blue_sigils_3',  level: 3, label: '파란색 시길 +3강 차익 Top3' },
+            ],
+            [{ key: 'blue_armors_5', level: 5, label: '파란색 방어구 +5강 차익 Top3' }],
             data
         );
 
-        // ── 고급(초록색): 무기+7/8/9, 방어구+5/6/7 ───────────────
+        // ── 고급(초록색): 무기+7/8/9, 방어구+5/6/7, 시길+1/2/3 ─────────
         buildTab(
             dashGreen, 'green',
             [
-                { key: 'green_weapons_7', level: 7, label: '🟢 고급 무기 +7강 차익 Top3' },
-                { key: 'green_weapons_8', level: 8, label: '🟢 고급 무기 +8강 차익 Top3' },
-                { key: 'green_weapons_9', level: 9, label: '🟢 고급 무기 +9강 차익 Top3' },
+                { key: 'green_weapons_7', level: 7, label: '초록색 무기 +7강 차익 Top3' },
+                { key: 'green_weapons_8', level: 8, label: '초록색 무기 +8강 차익 Top3' },
+                { key: 'green_weapons_9', level: 9, label: '초록색 무기 +9강 차익 Top3' },
+                { key: 'green_sigils_1',  level: 1, label: '초록색 시길 +1강 차익 Top3' },
+                { key: 'green_sigils_2',  level: 2, label: '초록색 시길 +2강 차익 Top3' },
+                { key: 'green_sigils_3',  level: 3, label: '초록색 시길 +3강 차익 Top3' },
             ],
             [
-                { key: 'green_armors_5', level: 5, label: '🟢 고급 방어구 +5강 차익 Top3' },
-                { key: 'green_armors_6', level: 6, label: '🟢 고급 방어구 +6강 차익 Top3' },
-                { key: 'green_armors_7', level: 7, label: '🟢 고급 방어구 +7강 차익 Top3' },
+                { key: 'green_armors_5', level: 5, label: '초록색 방어구 +5강 차익 Top3' },
+                { key: 'green_armors_6', level: 6, label: '초록색 방어구 +6강 차익 Top3' },
+                { key: 'green_armors_7', level: 7, label: '초록색 방어구 +7강 차익 Top3' },
             ],
             data
         );
