@@ -22,7 +22,8 @@ PRICE_URL  = "https://dev-api.plaync.com/l2m/v1.0/market/items/{}/price"
 ACCESSORY_KEYWORDS = [
     "이어링", "귀걸이", "네클리스", "네크리스", "목걸이",
     "반지", "링", "팔찌", "브레이슬릿", "아뮬렛",
-    "오브", "클러치", "브로치",
+    "오브", "클러치", "브로치", "벨트",
+    "레드 크레센트", "오닉스 비스트 아이", "여왕 개미의 심장", "지배자의 권능"
 ]
 
 ITEM_DB_FILE = "item_db_accessories_{}.json"  # 등급별 캐싱
